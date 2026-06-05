@@ -1,8 +1,7 @@
 # Citation metadata (Citation File Format). GitHub renders a "Cite this
 # repository" button from this file, and tools (Zenodo, citation managers) parse it.
 #
-# BEFORE ARCHIVING / SUBMISSION: add the Zenodo DOI once a release is archived
-# (uncomment the `doi:` line at the bottom and fill in the concept DOI).
+# Archived on Zenodo — DOI is set at the bottom of this file.
 cff-version: 1.2.0
 message: "If you use this software or its data, please cite it as below."
 title: "TraceForge: Observable Microservice Lab"
@@ -36,4 +35,4 @@ keywords:
   - database indexing
   - container orchestration
   - reproducible research
-# doi: "10.5281/zenodo.XXXXXXX" # uncomment and set the Zenodo CONCEPT DOI after archiving
+doi: "10.5281/zenodo.20561281"

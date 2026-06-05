@@ -18,6 +18,7 @@
     "stats:report": "tsx scripts/statistics-report.ts",
     "load:run": "tsx scripts/run-load-experiment.ts",
     "mttd:run": "tsx scripts/run-mttd.ts",
+    "sweep:run": "tsx scripts/run-load-sweep.ts",
     "env:capture": "tsx scripts/capture-environment.ts",
     "failure:report": "tsx scripts/failure-injection-report.ts",
     "indexing:run": "tsx scripts/run-postgres-indexing.ts",

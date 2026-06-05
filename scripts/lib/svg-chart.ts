@@ -123,6 +123,116 @@ export function renderBarChart(options: {
   return `${parts.join("\n")}\n`;
 }
 
+export type LinePoint = { x: number; y: number };
+export type LineSeries = { name: string; color: string; points: LinePoint[] };
+
+// Multi-series line chart with a numeric x-axis — used for latency-versus-throughput
+// curves where each mode is a series and x is the achieved request rate.
+export function renderLineChart(options: {
+  title: string;
+  subtitle?: string;
+  series: LineSeries[];
+  xAxisLabel: string;
+  yAxisLabel: string;
+  formatX: (value: number) => string;
+  formatY: (value: number) => string;
+}): string {
+  const width = 960;
+  const height = 480;
+  const margin = { top: 78, right: 150, bottom: 70, left: 84 };
+  const plotWidth = width - margin.left - margin.right;
+  const plotHeight = height - margin.top - margin.bottom;
+
+  const allPoints = options.series.flatMap((series) => series.points);
+  const xs = allPoints.map((point) => point.x);
+  const ys = allPoints.map((point) => point.y);
+  const xMin = xs.length ? Math.min(...xs) : 0;
+  const xMax = xs.length ? Math.max(...xs) : 1;
+  const yMax = ys.length ? Math.max(...ys) : 1;
+  const xSpan = xMax - xMin || 1;
+  const ySpan = yMax || 1;
+
+  const xOf = (value: number): number =>
+    margin.left + ((value - xMin) / xSpan) * plotWidth;
+  const yOf = (value: number): number =>
+    margin.top + plotHeight - (value / ySpan) * plotHeight;
+
+  const parts: string[] = [];
+  parts.push(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" font-family="-apple-system, Segoe UI, Roboto, sans-serif">`
+  );
+  parts.push(`<rect width="${width}" height="${height}" fill="#ffffff"/>`);
+  parts.push(
+    `<text x="${margin.left}" y="34" font-size="20" font-weight="600" fill="#1f2933">${escapeXml(options.title)}</text>`
+  );
+  if (options.subtitle) {
+    parts.push(
+      `<text x="${margin.left}" y="56" font-size="13" fill="#62707f">${escapeXml(options.subtitle)}</text>`
+    );
+  }
+
+  const tickCount = 4;
+  // Y gridlines.
+  for (let tick = 0; tick <= tickCount; tick += 1) {
+    const value = (ySpan * tick) / tickCount;
+    const y = yOf(value);
+    parts.push(
+      `<line x1="${margin.left}" y1="${y.toFixed(1)}" x2="${(margin.left + plotWidth).toFixed(1)}" y2="${y.toFixed(1)}" stroke="#e4e9f0" stroke-width="1"/>`
+    );
+    parts.push(
+      `<text x="${margin.left - 10}" y="${(y + 4).toFixed(1)}" font-size="11" text-anchor="end" fill="#8a97a6">${options.formatY(value)}</text>`
+    );
+  }
+  // X tick labels.
+  for (let tick = 0; tick <= tickCount; tick += 1) {
+    const value = xMin + (xSpan * tick) / tickCount;
+    const x = xOf(value);
+    parts.push(
+      `<text x="${x.toFixed(1)}" y="${(margin.top + plotHeight + 20).toFixed(1)}" font-size="11" text-anchor="middle" fill="#8a97a6">${options.formatX(value)}</text>`
+    );
+  }
+  parts.push(
+    `<text x="${(margin.left + plotWidth / 2).toFixed(1)}" y="${(height - 18).toFixed(1)}" font-size="12" text-anchor="middle" fill="#62707f">${escapeXml(options.xAxisLabel)}</text>`
+  );
+  parts.push(
+    `<text transform="translate(22 ${margin.top + plotHeight / 2}) rotate(-90)" font-size="12" text-anchor="middle" fill="#62707f">${escapeXml(options.yAxisLabel)}</text>`
+  );
+
+  // Series polylines + markers.
+  options.series.forEach((series) => {
+    const sorted = [...series.points].sort((a, b) => a.x - b.x);
+    if (sorted.length === 0) {
+      return;
+    }
+    const polyline = sorted
+      .map((point) => `${xOf(point.x).toFixed(1)},${yOf(point.y).toFixed(1)}`)
+      .join(" ");
+    parts.push(
+      `<polyline points="${polyline}" fill="none" stroke="${series.color}" stroke-width="2.5"/>`
+    );
+    for (const point of sorted) {
+      parts.push(
+        `<circle cx="${xOf(point.x).toFixed(1)}" cy="${yOf(point.y).toFixed(1)}" r="3.5" fill="${series.color}"/>`
+      );
+    }
+  });
+
+  // Legend (right side).
+  let legendY = margin.top + 4;
+  for (const series of options.series) {
+    parts.push(
+      `<line x1="${(margin.left + plotWidth + 16).toFixed(1)}" y1="${legendY - 4}" x2="${(margin.left + plotWidth + 34).toFixed(1)}" y2="${legendY - 4}" stroke="${series.color}" stroke-width="2.5"/>`
+    );
+    parts.push(
+      `<text x="${(margin.left + plotWidth + 40).toFixed(1)}" y="${legendY}" font-size="12" fill="#3e4c59">${escapeXml(series.name)}</text>`
+    );
+    legendY += 22;
+  }
+
+  parts.push("</svg>");
+  return `${parts.join("\n")}\n`;
+}
+
 export function escapeXml(value: string): string {
   return value
     .replace(/&/g, "&amp;")

@@ -31,6 +31,7 @@ _Not another microservices demo — a controlled laboratory that produces repeat
 ![report](https://img.shields.io/badge/final%20report-published-blueviolet)
 ![License](https://img.shields.io/badge/license-MIT%20%2B%20CC--BY--4.0-blue)
 ![reproducible](https://img.shields.io/badge/artifact-reproducible-success)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20561281.svg)](https://doi.org/10.5281/zenodo.20561281)
 
 </div>
 
@@ -121,7 +122,7 @@ The **realistic load campaign** (`pnpm load:run`, open-model, **N=10 per mode**)
 
 > 💡 **Takeaway:** **metrics are essentially free** (not statistically distinguishable from baseline), **structured logging is the dominant cost** (+164% CPU, +177% p50, with severe tail spikes), and the **batched OpenTelemetry pipeline stays smooth** despite carrying the most telemetry — all backed by N=10, bootstrap CIs, Kruskal–Wallis, Mann–Whitney U, and Cliff's δ.
 
-📄 **Read the full write-up:** [`docs/final-report.md`](docs/final-report.md) (§6.0 = primary result) and [`docs/statistics-load-report.md`](docs/statistics-load-report.md) (all tables + box plots); condensed in [`docs/paper-draft.md`](docs/paper-draft.md).
+📄 **Read the full write-up:** the journal manuscript draft is [`docs/manuscript.md`](docs/manuscript.md); the engineering report is [`docs/final-report.md`](docs/final-report.md) (§6.0 = primary result), with all tables and box plots in [`docs/statistics-load-report.md`](docs/statistics-load-report.md) and the literature review in [`docs/related-work.md`](docs/related-work.md).
 
 ---
 
@@ -353,8 +354,8 @@ command for every result, determinism/seeds, and a data-availability statement �
 [`docs/reproducibility.md`](docs/reproducibility.md).
 
 To cite this work, use [`CITATION.cff`](CITATION.cff) (GitHub's "Cite this repository"
-button). A versioned, DOI-archived snapshot can be minted via the GitHub–Zenodo
-integration ([`.zenodo.json`](.zenodo.json)).
+button). A versioned, DOI-archived snapshot is on Zenodo:
+**[10.5281/zenodo.20561281](https://doi.org/10.5281/zenodo.20561281)**.
 
 ## 📜 License
 

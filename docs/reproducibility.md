@@ -58,6 +58,7 @@ up and tear it down.
 | Cross-mode overhead aggregation               | `pnpm overhead:report`                                                                                                 | `docs/observability-overhead-report.md`, 6 charts                      |
 | **Statistical analysis**                      | `pnpm stats:report`                                                                                                    | `docs/statistics-report.md`, `statistics.csv/json`, box plots          |
 | **Realistic load harness** (N≥10, open model) | `pnpm load:run` then `STATS_DATASET=load pnpm stats:report`                                                            | `results/processed/load-*.csv`, `docs/statistics-load-report.md`       |
+| **Latency–throughput sweep**                  | `pnpm sweep:run`                                                                                                       | `results/processed/sweep-*.csv`, `docs/load-sweep-report.md`, 2 charts |
 | **PostgreSQL indexing** (1M rows)             | start Postgres (below), then `INDEXING_TRANSACTIONS=1000000 INDEXING_USERS=100000 INDEXING_REPS=15 pnpm indexing:run`  | `docs/postgres-indexing-report.md`, `postgres-indexing.csv`, raw plans |
 | **MongoDB indexing** (1M docs)                | start Mongo (below), then `INDEXING_TRANSACTIONS=1000000 INDEXING_USERS=100000 INDEXING_REPS=15 pnpm indexing:mongo`   | `docs/mongodb-indexing-report.md`, `mongodb-indexing.csv`              |
 | SQL-vs-NoSQL comparison                       | `pnpm sql-nosql:report`                                                                                                | `docs/sql-nosql-comparison.md`, 2 charts                               |
@@ -118,19 +119,15 @@ docs/
 The complete source code, experiment harnesses, raw and processed data, and all
 figures supporting this study are available in this repository. Code is licensed under
 the MIT License; experimental data and figures (the contents of `results/` and the
-generated reports) are licensed under CC-BY-4.0. An archived, versioned snapshot with a
-persistent DOI is available via Zenodo (see §9). Every result is regenerable from
-source with the commands in §4.
+generated reports) are licensed under CC-BY-4.0. An archived, versioned snapshot is
+available on Zenodo: [10.5281/zenodo.20561281](https://doi.org/10.5281/zenodo.20561281).
+Every result is regenerable from source with the commands in §4.
 
 ## 9. Citing and archiving
 
 - **Cite** the software using [`CITATION.cff`](../CITATION.cff) (GitHub renders a
   "Cite this repository" button).
-- **Archive** a versioned snapshot with a persistent DOI by enabling the GitHub–Zenodo
-  integration and publishing a release; Zenodo reads [`.zenodo.json`](../.zenodo.json)
-  for metadata and mints the DOI. Add the DOI back to `CITATION.cff`, `.zenodo.json`,
-  and the README badge.
-
-> **Before archiving / submission**, complete the placeholders in `CITATION.cff` and
-> `.zenodo.json` (author family name, ORCID, affiliation, repository URL) and add the
-> Zenodo DOI.
+- **Archived snapshot:** [10.5281/zenodo.20561281](https://doi.org/10.5281/zenodo.20561281)
+  (minted via the GitHub–Zenodo integration from a tagged release; Zenodo reads
+  [`.zenodo.json`](../.zenodo.json) for metadata). New releases mint a new version DOI
+  under the same concept DOI.

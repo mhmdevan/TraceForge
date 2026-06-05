@@ -205,8 +205,24 @@ H = 23.1, p < 0.001; p95 H = 16.2, p = 0.003). Three findings are robust:
 
 Absolute latency percentages remain sensitive to the load point (a ~5 ms baseline makes
 small absolute additions large in relative terms); the **CPU result and the qualitative
-ordering are the load-robust conclusions**. A latency-versus-throughput sweep across
-load levels is the natural next step.
+ordering are the load-robust conclusions**.
+
+#### 6.0.1 Latency–throughput sweep
+
+To characterize the load-dependence directly, we swept three modes across offered rates
+from 60 to 480 req/s (`pnpm sweep:run`; full tables in `docs/load-sweep-report.md`). At
+60 req/s all modes lie within ~10–40 ms p95 — the overhead is small in absolute terms at
+low load. As load rises the modes saturate **in order of instrumentation depth**: baseline
+sustains the full 480 req/s (p95 flat at ~5–9 ms); Metrics + Logs falls behind beyond
+~240 req/s; and Full OpenTelemetry saturates earliest, plateauing near **220 req/s — less
+than half of baseline's capacity** — with p95 climbing into the multi-second range past its
+knee. The dominant cost of the heavier pipelines is thus a **reduction in maximum
+sustainable throughput**, not a fixed per-request tax.
+
+![Achieved vs offered throughput](../results/charts/sweep-throughput.svg)
+
+> Caveat: k6 runs on the same host as the system under test, so the highest-load latencies
+> include some load-generator contention and should be read as an upper bound.
 
 ### 6.1 Latency by mode (preliminary micro-benchmark)
 

@@ -1,0 +1,321 @@
+name: observable-microservice-lab
+
+services:
+  api-gateway:
+    build:
+      context: ../../..
+      dockerfile: apps/api-gateway/Dockerfile
+    environment:
+      NODE_ENV: production
+      OBS_MODE: ${OBS_MODE:-none}
+      SERVICE_VERSION: ${SERVICE_VERSION:-0.1.0}
+      DEPLOYMENT_ENVIRONMENT: ${DEPLOYMENT_ENVIRONMENT:-local}
+      LOKI_PUSH_URL: ${LOKI_PUSH_URL:-http://loki:3100/loki/api/v1/push}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://jaeger:4318}
+      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:-}
+      OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: ${OTEL_EXPORTER_OTLP_LOGS_ENDPOINT:-}
+      OTEL_TRACES_SAMPLER_ARG: ${OTEL_TRACES_SAMPLER_ARG:-1}
+      API_GATEWAY_PORT: 3000
+      TRANSACTION_SERVICE_URL: http://transaction-service:3001
+    ports:
+      - "${API_GATEWAY_PORT:-3000}:3000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - traceforge
+    depends_on:
+      transaction-service:
+        condition: service_healthy
+
+  transaction-service:
+    build:
+      context: ../../..
+      dockerfile: apps/transaction-service/Dockerfile
+    environment:
+      NODE_ENV: production
+      OBS_MODE: ${OBS_MODE:-none}
+      SERVICE_VERSION: ${SERVICE_VERSION:-0.1.0}
+      DEPLOYMENT_ENVIRONMENT: ${DEPLOYMENT_ENVIRONMENT:-local}
+      LOKI_PUSH_URL: ${LOKI_PUSH_URL:-http://loki:3100/loki/api/v1/push}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://jaeger:4318}
+      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:-}
+      OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: ${OTEL_EXPORTER_OTLP_LOGS_ENDPOINT:-}
+      OTEL_TRACES_SAMPLER_ARG: ${OTEL_TRACES_SAMPLER_ARG:-1}
+      DB_SLOW_QUERY: ${DB_SLOW_QUERY:-false}
+      DB_SLOW_QUERY_DELAY_MS: ${DB_SLOW_QUERY_DELAY_MS:-500}
+      DB_CONNECTION_ERROR_RATE: ${DB_CONNECTION_ERROR_RATE:-0}
+      REDIS_DISABLED: ${REDIS_DISABLED:-false}
+      REDIS_TIMEOUT_RATE: ${REDIS_TIMEOUT_RATE:-0}
+      REDIS_TIMEOUT_MS: ${REDIS_TIMEOUT_MS:-500}
+      MEMORY_PRESSURE_ENABLED: ${MEMORY_PRESSURE_ENABLED:-false}
+      MEMORY_PRESSURE_MB: ${MEMORY_PRESSURE_MB:-0}
+      MEMORY_PRESSURE_LEAK_MB_PER_MIN: ${MEMORY_PRESSURE_LEAK_MB_PER_MIN:-0}
+      PAYMENT_CLIENT_TIMEOUT_MS: ${PAYMENT_CLIENT_TIMEOUT_MS:-5000}
+      TRANSACTION_SERVICE_PORT: 3001
+      PAYMENT_SERVICE_URL: http://payment-service:3002
+      DATABASE_URL: postgres://traceforge:traceforge@postgres:5432/traceforge
+      REDIS_URL: redis://redis:6379
+      RABBITMQ_URL: amqp://rabbitmq:5672
+      TRANSACTION_EVENTS_QUEUE: transaction.events
+      TRANSACTION_CACHE_TTL_SECONDS: 60
+    ports:
+      - "${TRANSACTION_SERVICE_PORT:-3001}:3001"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:3001/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - traceforge
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      payment-service:
+        condition: service_healthy
+
+  payment-service:
+    build:
+      context: ../../..
+      dockerfile: apps/payment-service/Dockerfile
+    environment:
+      NODE_ENV: production
+      OBS_MODE: ${OBS_MODE:-none}
+      SERVICE_VERSION: ${SERVICE_VERSION:-0.1.0}
+      DEPLOYMENT_ENVIRONMENT: ${DEPLOYMENT_ENVIRONMENT:-local}
+      LOKI_PUSH_URL: ${LOKI_PUSH_URL:-http://loki:3100/loki/api/v1/push}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://jaeger:4318}
+      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:-}
+      OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: ${OTEL_EXPORTER_OTLP_LOGS_ENDPOINT:-}
+      OTEL_TRACES_SAMPLER_ARG: ${OTEL_TRACES_SAMPLER_ARG:-1}
+      PAYMENT_MODE: ${PAYMENT_MODE:-normal}
+      PAYMENT_DELAY_MS: ${PAYMENT_DELAY_MS:-0}
+      PAYMENT_ERROR_RATE: ${PAYMENT_ERROR_RATE:-0}
+      PAYMENT_TIMEOUT_RATE: ${PAYMENT_TIMEOUT_RATE:-0}
+      PAYMENT_SERVICE_PORT: 3002
+    ports:
+      - "${PAYMENT_SERVICE_PORT:-3002}:3002"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:3002/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - traceforge
+
+  worker-service:
+    build:
+      context: ../../..
+      dockerfile: apps/worker-service/Dockerfile
+    environment:
+      NODE_ENV: production
+      OBS_MODE: ${OBS_MODE:-none}
+      SERVICE_VERSION: ${SERVICE_VERSION:-0.1.0}
+      DEPLOYMENT_ENVIRONMENT: ${DEPLOYMENT_ENVIRONMENT:-local}
+      LOKI_PUSH_URL: ${LOKI_PUSH_URL:-http://loki:3100/loki/api/v1/push}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://jaeger:4318}
+      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:-}
+      OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: ${OTEL_EXPORTER_OTLP_LOGS_ENDPOINT:-}
+      OTEL_TRACES_SAMPLER_ARG: ${OTEL_TRACES_SAMPLER_ARG:-1}
+      WORKER_DISABLED: ${WORKER_DISABLED:-false}
+      WORKER_PROCESSING_DELAY_MS: ${WORKER_PROCESSING_DELAY_MS:-0}
+      WORKER_ERROR_RATE: ${WORKER_ERROR_RATE:-0}
+      WORKER_SERVICE_PORT: 3003
+      DATABASE_URL: postgres://traceforge:traceforge@postgres:5432/traceforge
+      RABBITMQ_URL: amqp://rabbitmq:5672
+      TRANSACTION_EVENTS_QUEUE: transaction.events
+    ports:
+      - "${WORKER_SERVICE_PORT:-3003}:3003"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:3003/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - traceforge
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: traceforge
+      POSTGRES_USER: traceforge
+      POSTGRES_PASSWORD: traceforge
+    ports:
+      - "${POSTGRES_PORT:-15432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ../../../infra/postgres/001_init.sql:/docker-entrypoint-initdb.d/001_init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U traceforge -d traceforge"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - traceforge
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "${REDIS_PORT:-16379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - traceforge
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    ports:
+      - "${RABBITMQ_PORT:-15673}:5672"
+      - "${RABBITMQ_MANAGEMENT_PORT:-15674}:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - traceforge
+
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    profiles:
+      - metrics
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    volumes:
+      - ../../../infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ../../../infra/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+    networks:
+      - traceforge
+    depends_on:
+      api-gateway:
+        condition: service_healthy
+      transaction-service:
+        condition: service_healthy
+      payment-service:
+        condition: service_healthy
+      worker-service:
+        condition: service_healthy
+
+  loki:
+    image: grafana/loki:2.9.8
+    profiles:
+      - logs
+    command: ["-config.file=/etc/loki/loki.yml"]
+    ports:
+      - "${LOKI_PORT:-3100}:3100"
+    volumes:
+      - ../../../infra/loki/loki.yml:/etc/loki/loki.yml:ro
+      - loki-data:/loki
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:3100/ready"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    networks:
+      - traceforge
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.63.0
+    profiles:
+      - traces
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports:
+      - "${JAEGER_UI_PORT:-16686}:16686"
+      - "${OTEL_GRPC_PORT:-4317}:4317"
+      - "${OTEL_HTTP_PORT:-4318}:4318"
+    networks:
+      - traceforge
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.115.1
+    profiles:
+      - otel
+    command: ["--config=/etc/otelcol-contrib/otel-collector.yml"]
+    ports:
+      - "${OTEL_COLLECTOR_HEALTH_PORT:-13133}:13133"
+      - "${OTEL_COLLECTOR_METRICS_PORT:-8888}:8888"
+      - "${OTEL_COLLECTOR_PROMETHEUS_PORT:-8889}:8889"
+    volumes:
+      - ../../../infra/otel-collector/otel-collector.yml:/etc/otelcol-contrib/otel-collector.yml:ro
+    networks:
+      - traceforge
+    depends_on:
+      loki:
+        condition: service_healthy
+      jaeger:
+        condition: service_started
+      api-gateway:
+        condition: service_healthy
+      transaction-service:
+        condition: service_healthy
+      payment-service:
+        condition: service_healthy
+      worker-service:
+        condition: service_healthy
+
+  grafana:
+    image: grafana/grafana:11.3.0
+    profiles:
+      - metrics
+      - logs
+      - traces
+      - otel
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-traceforge}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    ports:
+      - "${GRAFANA_PORT:-3004}:3000"
+    volumes:
+      - ../../../infra/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ../../../infra/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    networks:
+      - traceforge
+    depends_on:
+      - prometheus
+
+networks:
+  traceforge:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  loki-data:

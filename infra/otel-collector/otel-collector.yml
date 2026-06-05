@@ -1,0 +1,114 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+  prometheus:
+    config:
+      scrape_configs:
+        - job_name: api-gateway-otel
+          metrics_path: /metrics
+          static_configs:
+            - targets:
+                - api-gateway:3000
+
+        - job_name: transaction-service-otel
+          metrics_path: /metrics
+          static_configs:
+            - targets:
+                - transaction-service:3001
+
+        - job_name: payment-service-otel
+          metrics_path: /metrics
+          static_configs:
+            - targets:
+                - payment-service:3002
+
+        - job_name: worker-service-otel
+          metrics_path: /metrics
+          static_configs:
+            - targets:
+                - worker-service:3003
+
+processors:
+  batch:
+    timeout: 1s
+    send_batch_size: 512
+
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 256
+    spike_limit_mib: 64
+
+  resource:
+    attributes:
+      - action: insert
+        key: deployment.environment
+        value: local
+
+  attributes/log_labels:
+    actions:
+      - action: insert
+        key: loki.attribute.labels
+        value: service,level,route
+
+exporters:
+  otlphttp/jaeger:
+    endpoint: http://jaeger:4318
+
+  prometheus:
+    endpoint: 0.0.0.0:8889
+    resource_to_telemetry_conversion:
+      enabled: true
+
+  loki:
+    endpoint: http://loki:3100/loki/api/v1/push
+
+  debug:
+    verbosity: basic
+
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+
+service:
+  extensions:
+    - health_check
+  telemetry:
+    metrics:
+      address: 0.0.0.0:8888
+  pipelines:
+    traces:
+      receivers:
+        - otlp
+      processors:
+        - memory_limiter
+        - resource
+        - batch
+      exporters:
+        - otlphttp/jaeger
+
+    metrics:
+      receivers:
+        - otlp
+        - prometheus
+      processors:
+        - memory_limiter
+        - resource
+        - batch
+      exporters:
+        - prometheus
+
+    logs:
+      receivers:
+        - otlp
+      processors:
+        - memory_limiter
+        - resource
+        - attributes/log_labels
+        - batch
+      exporters:
+        - loki

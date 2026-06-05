@@ -1,0 +1,186 @@
+{
+  "status": "illustrative-example",
+  "note": "ILLUSTRATIVE PLACEHOLDER DATA — NOT MEASURED. Copy this file to observations.json, run the protocol in docs/failure-injection-protocol.md, replace every timestamp with a real recording, and set status to 'measured'.",
+  "scenarios": [
+    {
+      "id": "F1",
+      "title": "Slow payment",
+      "service": "payment-service",
+      "expectedSymptom": "high latency",
+      "bestTool": "traces",
+      "envFlags": { "PAYMENT_MODE": "slow", "PAYMENT_DELAY_MS": "1000" },
+      "runs": [
+        {
+          "mode": "none",
+          "failureStartTimestamp": "2026-06-05T10:00:00.000Z",
+          "firstVisibleSymptomTimestamp": "2026-06-05T10:01:10.000Z",
+          "firstAlertTimestamp": null,
+          "rootCauseIdentifiedTimestamp": "2026-06-05T10:09:00.000Z",
+          "toolsUsed": ["docker stats", "manual curl"],
+          "manualSteps": 9,
+          "rootCauseAccuracy": "partial"
+        },
+        {
+          "mode": "otel_full",
+          "failureStartTimestamp": "2026-06-05T11:00:00.000Z",
+          "firstVisibleSymptomTimestamp": "2026-06-05T11:00:18.000Z",
+          "firstAlertTimestamp": "2026-06-05T11:00:25.000Z",
+          "rootCauseIdentifiedTimestamp": "2026-06-05T11:01:40.000Z",
+          "toolsUsed": ["Grafana", "Jaeger"],
+          "manualSteps": 3,
+          "rootCauseAccuracy": "correct"
+        }
+      ]
+    },
+    {
+      "id": "F2",
+      "title": "Payment 500 errors",
+      "service": "payment-service",
+      "expectedSymptom": "error rate spike",
+      "bestTool": "metrics + logs",
+      "envFlags": { "PAYMENT_ERROR_RATE": "0.2" },
+      "runs": [
+        {
+          "mode": "none",
+          "failureStartTimestamp": "2026-06-05T10:10:00.000Z",
+          "firstVisibleSymptomTimestamp": "2026-06-05T10:10:40.000Z",
+          "firstAlertTimestamp": null,
+          "rootCauseIdentifiedTimestamp": "2026-06-05T10:16:30.000Z",
+          "toolsUsed": ["k6 output", "manual curl"],
+          "manualSteps": 7,
+          "rootCauseAccuracy": "correct"
+        },
+        {
+          "mode": "otel_full",
+          "failureStartTimestamp": "2026-06-05T11:10:00.000Z",
+          "firstVisibleSymptomTimestamp": "2026-06-05T11:10:12.000Z",
+          "firstAlertTimestamp": "2026-06-05T11:10:18.000Z",
+          "rootCauseIdentifiedTimestamp": "2026-06-05T11:11:05.000Z",
+          "toolsUsed": ["Grafana", "Loki"],
+          "manualSteps": 3,
+          "rootCauseAccuracy": "correct"
+        }
+      ]
+    },
+    {
+      "id": "F3",
+      "title": "Slow DB query",
+      "service": "transaction-service",
+      "expectedSymptom": "p95 increase",
+      "bestTool": "traces + DB metrics",
+      "envFlags": { "DB_SLOW_QUERY": "true", "DB_SLOW_QUERY_DELAY_MS": "500" },
+      "runs": [
+        {
+          "mode": "none",
+          "failureStartTimestamp": "2026-06-05T10:20:00.000Z",
+          "firstVisibleSymptomTimestamp": "2026-06-05T10:21:30.000Z",
+          "firstAlertTimestamp": null,
+          "rootCauseIdentifiedTimestamp": "2026-06-05T10:33:00.000Z",
+          "toolsUsed": ["docker stats", "manual curl"],
+          "manualSteps": 11,
+          "rootCauseAccuracy": "incorrect"
+        },
+        {
+          "mode": "otel_full",
+          "failureStartTimestamp": "2026-06-05T11:20:00.000Z",
+          "firstVisibleSymptomTimestamp": "2026-06-05T11:20:22.000Z",
+          "firstAlertTimestamp": "2026-06-05T11:20:30.000Z",
+          "rootCauseIdentifiedTimestamp": "2026-06-05T11:22:10.000Z",
+          "toolsUsed": ["Grafana", "Jaeger", "DB metrics"],
+          "manualSteps": 4,
+          "rootCauseAccuracy": "correct"
+        }
+      ]
+    },
+    {
+      "id": "F4",
+      "title": "RabbitMQ consumer stopped",
+      "service": "worker-service",
+      "expectedSymptom": "queue lag",
+      "bestTool": "metrics",
+      "envFlags": { "WORKER_DISABLED": "true" },
+      "runs": [
+        {
+          "mode": "none",
+          "failureStartTimestamp": "2026-06-05T10:30:00.000Z",
+          "firstVisibleSymptomTimestamp": "2026-06-05T10:33:00.000Z",
+          "firstAlertTimestamp": null,
+          "rootCauseIdentifiedTimestamp": "2026-06-05T10:45:00.000Z",
+          "toolsUsed": ["RabbitMQ UI", "manual curl"],
+          "manualSteps": 8,
+          "rootCauseAccuracy": "partial"
+        },
+        {
+          "mode": "otel_full",
+          "failureStartTimestamp": "2026-06-05T11:30:00.000Z",
+          "firstVisibleSymptomTimestamp": "2026-06-05T11:30:35.000Z",
+          "firstAlertTimestamp": "2026-06-05T11:30:40.000Z",
+          "rootCauseIdentifiedTimestamp": "2026-06-05T11:32:30.000Z",
+          "toolsUsed": ["Grafana", "RabbitMQ metrics"],
+          "manualSteps": 4,
+          "rootCauseAccuracy": "correct"
+        }
+      ]
+    },
+    {
+      "id": "F5",
+      "title": "Redis unavailable",
+      "service": "transaction-service",
+      "expectedSymptom": "cache miss + latency",
+      "bestTool": "logs + metrics",
+      "envFlags": { "REDIS_DISABLED": "true" },
+      "runs": [
+        {
+          "mode": "none",
+          "failureStartTimestamp": "2026-06-05T10:40:00.000Z",
+          "firstVisibleSymptomTimestamp": "2026-06-05T10:41:20.000Z",
+          "firstAlertTimestamp": null,
+          "rootCauseIdentifiedTimestamp": "2026-06-05T10:52:00.000Z",
+          "toolsUsed": ["docker stats", "manual curl"],
+          "manualSteps": 10,
+          "rootCauseAccuracy": "partial"
+        },
+        {
+          "mode": "otel_full",
+          "failureStartTimestamp": "2026-06-05T11:40:00.000Z",
+          "firstVisibleSymptomTimestamp": "2026-06-05T11:40:25.000Z",
+          "firstAlertTimestamp": null,
+          "rootCauseIdentifiedTimestamp": "2026-06-05T11:42:00.000Z",
+          "toolsUsed": ["Grafana", "Loki"],
+          "manualSteps": 5,
+          "rootCauseAccuracy": "correct"
+        }
+      ]
+    },
+    {
+      "id": "F6",
+      "title": "Memory pressure",
+      "service": "transaction-service",
+      "expectedSymptom": "latency/error growth",
+      "bestTool": "metrics",
+      "envFlags": { "MEMORY_PRESSURE_ENABLED": "true", "MEMORY_PRESSURE_MB": "256" },
+      "runs": [
+        {
+          "mode": "none",
+          "failureStartTimestamp": "2026-06-05T10:50:00.000Z",
+          "firstVisibleSymptomTimestamp": "2026-06-05T10:52:30.000Z",
+          "firstAlertTimestamp": null,
+          "rootCauseIdentifiedTimestamp": "2026-06-05T11:05:00.000Z",
+          "toolsUsed": ["docker stats"],
+          "manualSteps": 9,
+          "rootCauseAccuracy": "partial"
+        },
+        {
+          "mode": "otel_full",
+          "failureStartTimestamp": "2026-06-05T11:50:00.000Z",
+          "firstVisibleSymptomTimestamp": "2026-06-05T11:50:40.000Z",
+          "firstAlertTimestamp": "2026-06-05T11:50:50.000Z",
+          "rootCauseIdentifiedTimestamp": "2026-06-05T11:53:00.000Z",
+          "toolsUsed": ["Grafana", "container metrics"],
+          "manualSteps": 5,
+          "rootCauseAccuracy": "correct"
+        }
+      ]
+    }
+  ]
+}

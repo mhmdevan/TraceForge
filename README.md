@@ -55,6 +55,32 @@ It answers one core question with numbers, not opinions:
 
 ---
 
+## 🔬 Research Scope
+
+This repository is a **controlled experimental artifact**. It does **not** claim general
+superiority of any observability stack, database, or orchestration platform. All conclusions
+are limited to the implemented workload, dataset, hardware, and experimental protocol — they
+characterize _this_ system, _this_ machine, and _this_ telemetry implementation, and should
+not be generalized to all microservice systems. Stating these bounds is scientific honesty,
+not a limitation of the method.
+
+Scope notes:
+
+- **RQ2 measures _failure detection_ (MTTD), not full debuggability.** Root-cause diagnosis
+  requires a controlled operator study and is explicitly future work.
+- **Single machine / single stack** (Apple M4, 16 GiB, Node.js/TypeScript). A different
+  runtime, instrumentation library, or hardware budget could shift both the magnitude and
+  the ordering of the costs.
+- **The numbers characterize the artifact; the methodology and qualitative ordering are the
+  transferable contributions.**
+
+**For reviewers / supervisors:** [`docs/manuscript.md`](docs/manuscript.md) (paper draft) ·
+[`docs/claims-to-evidence.md`](docs/claims-to-evidence.md) (every claim → command → data) ·
+[`docs/demo.md`](docs/demo.md) (5-minute live walkthrough) ·
+[`docs/ru/README.md`](docs/ru/README.md) (полная документация на русском).
+
+---
+
 ## 🏗️ Architecture
 
 ```mermaid

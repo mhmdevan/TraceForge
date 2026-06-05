@@ -1,4 +1,4 @@
-# Measuring the Performance Cost and Debuggability Value of Observability in Containerized Microservices: A Controlled, Reproducible Study
+# Measuring the Performance Cost and Failure-Detection Value of Observability in Containerized Microservices: A Controlled, Reproducible Study
 
 **Mohammad Eslamnia**
 Department of Mathematical Support and Administration of Information Systems,
@@ -36,8 +36,10 @@ baseline); structured logging is the single largest contributor (CPU +164%, medi
 latency +177%, both p < 0.001, Cliff's δ = 1.0) and induces severe tail-latency spikes;
 and the full OpenTelemetry pipeline, despite carrying the most telemetry, holds CPU near
 the tracing level (+51%) with the lowest latency variance, owing to its batched,
-asynchronous export. We then measure the debuggability benefit objectively as
-mean-time-to-detect (MTTD): the time from fault onset to a Prometheus alert firing.
+asynchronous export. We then measure the **failure-detection** benefit objectively as
+mean-time-to-detect (MTTD): the time from fault onset to a Prometheus alert firing. We
+deliberately scope this to detection — root-cause diagnosis, the other half of
+"debuggability", requires a controlled operator study and is left as future work.
 Without a metrics pipeline an injected fault — a 12% error rate or a one-second p95
 latency — is real but automatically undetectable, whereas any metrics-bearing depth
 detects it within roughly one scrape interval (≈9 s to pending) and pages within the
@@ -71,13 +73,14 @@ observability and the value it provides. We address two research questions:
 - **RQ1 (Overhead).** How does each incremental level of observability instrumentation
   affect latency, CPU usage, memory usage, and telemetry volume, relative to an
   uninstrumented baseline?
-- **RQ2 (Debuggability).** How much does observability reduce the time to _detect_ a
+- **RQ2 (Failure detection).** How much does observability reduce the time to _detect_ a
   fault?
 
-We answer RQ1 with a statistically powered, open-model load campaign, and the _detection_
-half of RQ2 with a fully automated, objective MTTD measurement. The _root-cause_ half of
-RQ2 — how much logs and traces accelerate human diagnosis — requires a controlled operator
-study and is left as future work; we report the implemented protocol but no human timings.
+RQ2 measures **detection only**. Diagnosis (root-cause analysis) is the other, harder half
+of "debuggability"; it requires a controlled operator study and is explicitly out of scope
+here — we report the implemented protocol but no human timings, and avoid any claim about
+diagnosis. We answer RQ1 with a statistically powered, open-model load campaign and RQ2
+with a fully automated, objective MTTD measurement.
 
 The contributions of this paper are:
 
@@ -88,9 +91,9 @@ The contributions of this paper are:
    repetitions, bootstrap confidence intervals, and non-parametric inference, which
    isolates structured logging as the dominant cost and shows the batched OpenTelemetry
    pipeline to be comparatively smooth.
-3. **An objective debuggability result** (RQ2, detection): MTTD measured as the time from
-   fault onset to alert firing, revealing a step change from "undetectable" without a
-   metrics pipeline to bounded, configurable detection with one.
+3. **An objective failure-detection result** (RQ2): MTTD measured as the time from fault
+   onset to alert firing, revealing a step change from "undetectable" without a metrics
+   pipeline to bounded, configurable detection with one.
 4. **Secondary controlled comparisons** of database indexing at one million rows
    (PostgreSQL and MongoDB) and of container orchestration platforms.
 5. **A complete, DOI-archived reproducibility artifact** in which every figure and dataset
@@ -136,6 +139,27 @@ catalogue the diagnostic value of telemetry. The debuggability benefit, however,
 treated qualitatively; quantifying detection time objectively, as we do, is comparatively
 rare. A full thematic review with citations is provided in the artifact
 (`docs/related-work.md`).
+
+**Positioning.** Concretely, prior observability-overhead work typically fixes one of the
+axes this study varies. Microbenchmark suites (the Kieker/MooBench line) measure
+instrumentation cost in isolation rather than end-to-end through a multi-service request
+path; OpenTelemetry-versus-commercial comparisons answer "which vendor" rather than "which
+pillar"; and most application-level studies compare a single instrumented build against an
+uninstrumented one — a binary, not a gradient. This paper instead holds the application,
+workload, and hardware fixed and varies **only** the observability depth across five
+additive levels anchored to a true uninstrumented baseline, then pairs that with an
+**objective** failure-detection metric and a **reproducible** artifact. To our knowledge,
+that specific combination — incremental depth + statistical rigor + objective MTTD + a
+DOI-archived testbed — is not jointly covered by existing work. We make no claim of novelty
+in the individual components (open-model load, non-parametric statistics, and alert-based
+detection are all established); the contribution is the controlled, end-to-end synthesis.
+
+> _Citation status._ The well-established references above (Dapper, Pivot Tracing, Canopy,
+> Georges et al., Kalibera and Jones, Arcuri and Briand, and the classical statistics) are
+> cited with high confidence. The recent OpenTelemetry-overhead sources (theses and
+> preprints from 2024) are cited as indicative of the current empirical range only; each
+> must be verified against its primary source — and ideally replaced with a peer-reviewed
+> version — before submission.
 
 ## 3. System Under Study
 
@@ -365,10 +389,16 @@ blocked (per-mode) rather than fully interleaved per repetition. The high p95 va
 instrumented modes (CV up to ≈235%) reflects genuine tail-latency instability under load
 and widens the latency confidence intervals.
 
-**External.** Results reflect one application, one workload shape, and one hardware
-configuration; absolute latency percentages are sensitive to the chosen load point because
-the baseline latency is small. The qualitative ordering and the CPU result are the most
-transferable conclusions.
+**External.** This is a single-system, single-machine, single-workload, single-stack study.
+**The results should not be generalized to all microservice systems; they characterize this
+workload, this Node.js/TypeScript telemetry implementation, this hardware (an Apple M4 with
+16 GiB RAM), and this experimental protocol.** A different language runtime, instrumentation
+library, sampling configuration, or hardware budget could shift both the magnitude and the
+ordering of the costs. Absolute latency percentages are additionally sensitive to the chosen
+load point because the baseline latency is small. We therefore present the _methodology_ and
+the _qualitative ordering_ as the transferable contributions, and treat the specific numbers
+as characterizing this artifact — not as universal constants. Stating these bounds is
+scientific honesty, not a weakness.
 
 **Conclusion.** N = 10 is the minimum for the chosen non-parametric tests; larger N and a
 multi-load sweep would tighten intervals. All statistical choices (non-parametric tests,

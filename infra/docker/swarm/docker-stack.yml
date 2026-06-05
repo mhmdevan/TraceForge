@@ -1,0 +1,151 @@
+# Docker Swarm stack for TraceForge (Phase 12 orchestration comparison).
+#
+# Unlike the Compose file, Swarm adds a `deploy` section per service (replicas,
+# restart policy, resource limits) and uses an overlay network with a routing
+# mesh, so a published port load-balances across replicas. Swarm ignores
+# `build:` and `depends_on:`; images must be built and tagged first:
+#
+#   docker compose -f infra/docker/compose/docker-compose.base.yml build
+#   docker tag observable-microservice-lab_api-gateway traceforge-api-gateway
+#   docker tag observable-microservice-lab_transaction-service traceforge-transaction-service
+#   docker tag observable-microservice-lab_payment-service traceforge-payment-service
+#   docker tag observable-microservice-lab_worker-service traceforge-worker-service
+#
+#   docker swarm init
+#   docker stack deploy -c infra/docker/swarm/docker-stack.yml --resolve-image never traceforge
+#
+# Because Swarm has no startup ordering, the app services restart (restart_policy)
+# until the datastores accept connections, then converge.
+
+version: "3.8"
+
+services:
+  api-gateway:
+    image: traceforge-api-gateway:latest
+    environment:
+      NODE_ENV: production
+      OBS_MODE: none
+      API_GATEWAY_PORT: 3000
+      TRANSACTION_SERVICE_URL: http://transaction-service:3001
+    ports:
+      - "${API_GATEWAY_PORT:-3000}:3000"
+    networks:
+      - traceforge
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
+        delay: 3s
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 256M
+
+  transaction-service:
+    image: traceforge-transaction-service:latest
+    environment:
+      NODE_ENV: production
+      OBS_MODE: none
+      TRANSACTION_SERVICE_PORT: 3001
+      PAYMENT_SERVICE_URL: http://payment-service:3002
+      DATABASE_URL: postgres://traceforge:traceforge@postgres:5432/traceforge
+      REDIS_URL: redis://redis:6379
+      RABBITMQ_URL: amqp://rabbitmq:5672
+      TRANSACTION_EVENTS_QUEUE: transaction.events
+      TRANSACTION_CACHE_TTL_SECONDS: 60
+    ports:
+      - "${TRANSACTION_SERVICE_PORT:-3001}:3001"
+    networks:
+      - traceforge
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
+        delay: 3s
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 256M
+
+  payment-service:
+    image: traceforge-payment-service:latest
+    environment:
+      NODE_ENV: production
+      OBS_MODE: none
+      PAYMENT_SERVICE_PORT: 3002
+    ports:
+      - "${PAYMENT_SERVICE_PORT:-3002}:3002"
+    networks:
+      - traceforge
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
+        delay: 3s
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 256M
+
+  worker-service:
+    image: traceforge-worker-service:latest
+    environment:
+      NODE_ENV: production
+      OBS_MODE: none
+      WORKER_SERVICE_PORT: 3003
+      DATABASE_URL: postgres://traceforge:traceforge@postgres:5432/traceforge
+      RABBITMQ_URL: amqp://rabbitmq:5672
+      TRANSACTION_EVENTS_QUEUE: transaction.events
+    ports:
+      - "${WORKER_SERVICE_PORT:-3003}:3003"
+    networks:
+      - traceforge
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
+        delay: 3s
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 256M
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: traceforge
+      POSTGRES_USER: traceforge
+      POSTGRES_PASSWORD: traceforge
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - traceforge
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
+
+  redis:
+    image: redis:7-alpine
+    networks:
+      - traceforge
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    networks:
+      - traceforge
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
+
+networks:
+  traceforge:
+    driver: overlay
+
+volumes:
+  postgres-data:

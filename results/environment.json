@@ -1,0 +1,144 @@
+{
+  "capturedAt": "2026-06-05T16:31:56.603Z",
+  "os": {
+    "platform": "darwin",
+    "release": "25.3.0",
+    "arch": "arm64"
+  },
+  "cpu": {
+    "model": "Apple M4",
+    "logicalCores": 10,
+    "speedMHz": 2400
+  },
+  "memoryBytes": 17179869184,
+  "runtime": {
+    "node": "v20.19.0",
+    "pnpm": "10.26.1"
+  },
+  "docker": {
+    "version": "Docker version 20.10.16, build aa7e414",
+    "composeVersion": "2.6.0"
+  },
+  "git": {
+    "commit": "0185d3a1085974b32b65fad2583cf64fa185337d",
+    "shortCommit": "0185d3a",
+    "dirty": true
+  },
+  "images": [
+    {
+      "repository": "curlimages/curl",
+      "tag": "8.11.1",
+      "digest": "sha256:c1fe1679c34d9784c1b0d1e5f62ac0a79fca01fb6377cdd33e90473c6f9f9a69"
+    },
+    {
+      "repository": "grafana/grafana",
+      "tag": "11.3.0",
+      "digest": "sha256:a0f881232a6fb71a0554a47d0fe2203b6888fe77f4cefb7ea62bed7eb54e13c3"
+    },
+    {
+      "repository": "grafana/k6",
+      "tag": "0.49.0",
+      "digest": "sha256:8cd78f9d0de5f50bc8821cceecf356d5d9e839e6611c226a3fcf13c591080fbd"
+    },
+    {
+      "repository": "grafana/k6",
+      "tag": "0.54.0",
+      "digest": "sha256:1f40432b1cbe7234e977f96c362c9bc550a2d2b583d014dd8669fe40d3e9e755"
+    },
+    {
+      "repository": "grafana/loki",
+      "tag": "2.9.8",
+      "digest": "sha256:8b5bd7748d0e4da66cd741ac276e485517514af0bea32167e27c0e1a95bcf8aa"
+    },
+    {
+      "repository": "jaegertracing/all-in-one",
+      "tag": "1.63.0",
+      "digest": "sha256:fd5697c37ba041a91cfca1d62621d32cdeb2041c0febc2f1579e5bac6f21e34b"
+    },
+    {
+      "repository": "mongo",
+      "tag": "7",
+      "digest": "sha256:4b5bf3c2bb7516164f6dcb44acce4fdcb428abfe5771a1128304a0f34ab9ff7c"
+    },
+    {
+      "repository": "otel/opentelemetry-collector-contrib",
+      "tag": "0.115.1",
+      "digest": "sha256:d2da12c4336a79758826700be9e21ecf4a9f7d945b7f8a58ba55ee3fa45427c8"
+    },
+    {
+      "repository": "postgres",
+      "tag": "<none>",
+      "digest": "sha256:23e88eb049fd5d54894d70100df61d38a49ed97909263f79d4ff4c30a5d5fca2"
+    },
+    {
+      "repository": "postgres",
+      "tag": "14",
+      "digest": "sha256:922d38d4ca73ba5bfa8140c50b0d1f45636ca7b4c20d90506c49e2be2d7911f5"
+    },
+    {
+      "repository": "postgres",
+      "tag": "15",
+      "digest": "sha256:3156e13d976072c9083fe4c56455b8515dcf6fee23fd770e6ba4a3c6b8837337"
+    },
+    {
+      "repository": "postgres",
+      "tag": "15-alpine",
+      "digest": "sha256:2985f77749c75e90d340b8538dbf55d4e5b2c5396b2f05b7add61a7d8cd50a99"
+    },
+    {
+      "repository": "postgres",
+      "tag": "16",
+      "digest": "sha256:d4c3314b2dd74ff23cd6cd07e4d7e737cb6ef791c22a7cbd744cfbfb4815df72"
+    },
+    {
+      "repository": "postgres",
+      "tag": "16-alpine",
+      "digest": "sha256:16bc17c64a573ef34162af9298258d1aec548232985b33ed7b1eac33ba35c229"
+    },
+    {
+      "repository": "prom/prometheus",
+      "tag": "v2.55.1",
+      "digest": "sha256:2659f4c2ebb718e7695cb9b25ffa7d6be64db013daba13e05c875451cf51b0d3"
+    },
+    {
+      "repository": "rabbitmq",
+      "tag": "3-management",
+      "digest": "sha256:87269be55d78e54d35d3e96ff8474cec644f9a978f90137565afd0e76c779b44"
+    },
+    {
+      "repository": "rabbitmq",
+      "tag": "3-management-alpine",
+      "digest": "sha256:606d8c0d6b3c18d1da9afc53bc7cdb2a8d5486df91b5a9830e9e07626c9ae281"
+    },
+    {
+      "repository": "rabbitmq",
+      "tag": "3.13-alpine",
+      "digest": "sha256:d7af1c87c5f1eda13fcfca06db452bf3aeab6619fc3358b68535c0c02c4e52bc"
+    },
+    {
+      "repository": "rabbitmq",
+      "tag": "3.13-management",
+      "digest": "sha256:461bd5669937aa4fb45d431696bda203e3eb9d45d8c959edb2ccaa809cf1aabe"
+    },
+    {
+      "repository": "rabbitmq",
+      "tag": "3.13-management-alpine",
+      "digest": "sha256:606d8c0d6b3c18d1da9afc53bc7cdb2a8d5486df91b5a9830e9e07626c9ae281"
+    },
+    {
+      "repository": "redis",
+      "tag": "7-alpine",
+      "digest": "sha256:6ab0b6e7381779332f97b8ca76193e45b0756f38d4c0dcda72dbb3c32061ab99"
+    },
+    {
+      "repository": "redis",
+      "tag": "7.4.7-alpine",
+      "digest": "sha256:ee64a64eaab618d88051c3ade8f6352d11531fcf79d9a4818b9b183d8c1d18ba"
+    },
+    {
+      "repository": "redis",
+      "tag": "latest",
+      "digest": "sha256:148695256067211907349750fe4f7acc4c07aac77bd32ac4a5047693a841731f"
+    }
+  ]
+}

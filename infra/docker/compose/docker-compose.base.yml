@@ -213,6 +213,23 @@ services:
     networks:
       - traceforge
 
+  # NoSQL indexing experiments (Phase 11). Started with the `mongo` profile.
+  mongo:
+    image: mongo:7
+    profiles:
+      - mongo
+    ports:
+      - "${MONGO_PORT:-27117}:27017"
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.runCommand({ ping: 1 }).ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - traceforge
+
   prometheus:
     image: prom/prometheus:v2.55.1
     profiles:
@@ -319,3 +336,4 @@ networks:
 volumes:
   postgres-data:
   loki-data:
+  mongo-data:

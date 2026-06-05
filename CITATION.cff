@@ -1,0 +1,39 @@
+# Citation metadata (Citation File Format). GitHub renders a "Cite this
+# repository" button from this file, and tools (Zenodo, citation managers) parse it.
+#
+# BEFORE ARCHIVING / SUBMISSION: add the Zenodo DOI once a release is archived
+# (uncomment the `doi:` line at the bottom and fill in the concept DOI).
+cff-version: 1.2.0
+message: "If you use this software or its data, please cite it as below."
+title: "TraceForge: Observable Microservice Lab"
+abstract: >-
+  A controlled, experiment-first testbed that measures the performance and resource
+  cost of observability instrumentation in a containerized microservice system. It
+  compares five additive observability modes (none, metrics, +logs, +traces, full
+  OpenTelemetry pipeline) against a true uninstrumented baseline with statistical
+  rigor (open-model load, bootstrap confidence intervals, non-parametric tests,
+  effect sizes), measures objective failure detection (MTTD via alert firing), and
+  includes PostgreSQL/MongoDB indexing and Compose-vs-Swarm-vs-Kubernetes comparisons.
+type: software
+authors:
+  - given-names: Mohammad
+    family-names: Eslamnia
+    email: mhmd.esm3@gmail.com
+    orcid: "https://orcid.org/0009-0001-0014-8000"
+    affiliation: "Department of Mathematical Support and Administration of Information Systems, Institute of Intelligent Systems and Technologies, Peter the Great St. Petersburg Polytechnic University"
+version: "1.0.0"
+date-released: "2026-06-05"
+license: MIT
+license-url: "https://opensource.org/licenses/MIT"
+repository-code: "https://github.com/mhmdevan/TraceForge"
+keywords:
+  - observability
+  - microservices
+  - OpenTelemetry
+  - performance evaluation
+  - benchmarking
+  - distributed tracing
+  - database indexing
+  - container orchestration
+  - reproducible research
+# doi: "10.5281/zenodo.XXXXXXX" # uncomment and set the Zenodo CONCEPT DOI after archiving

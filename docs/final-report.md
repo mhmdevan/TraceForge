@@ -2,13 +2,13 @@
 
 **Project:** TraceForge — Observable Microservice Lab
 **Version:** v1.0 (Phases 0–9)
-**Status of results:** Observability-overhead measurements are real (15 runs across 5 modes). Failure-injection mechanisms and the debuggability measurement protocol are implemented; the human-run detection/root-cause timings are pending and are explicitly _not_ reported as findings here.
+**Status of results:** Observability-overhead measurements are real — the primary result is a realistic open-model campaign (N = 10 per mode, §6.0); an earlier 15-run micro-benchmark (§6.1–6.4) is retained for context. The RQ2 **detection** half is now measured objectively (mean-time-to-detect via Prometheus alert firing; see §6.5); the **root-cause** half (human-in-the-loop) remains an implemented-but-unrun protocol and is explicitly _not_ reported as a finding here.
 
 ---
 
 ## Abstract
 
-Observability instrumentation — metrics, structured logs, and distributed traces — is widely adopted in microservice systems, but its runtime cost is often assumed rather than measured. This report presents a controlled, experiment-first evaluation of how increasing observability depth affects latency, CPU, memory, and telemetry volume in a containerized microservice application. A single transaction-processing flow spanning HTTP, PostgreSQL, Redis, and RabbitMQ was instrumented behind one environment switch (`OBS_MODE`) that selects between five modes: no observability, metrics only, metrics + logs, metrics + logs + traces, and a full OpenTelemetry Collector pipeline. Each mode was driven by an identical k6 workload and repeated three times (15 runs total). Relative to the uninstrumented baseline, metrics-only instrumentation imposed no measurable latency cost at this load (within run-to-run noise), whereas the introduction of structured logging was the single largest contributor to overhead (p95 latency +369.6%, CPU +158.7%). The full OpenTelemetry pipeline showed the highest tail latency (p95 +432.6%, p99 +508.5%) and added a dedicated Collector cost of approximately 18% CPU and 79 MiB of memory. Telemetry volume scaled to roughly 5.7 log entries and 6.7 spans per request. We discuss the practical implications of these trade-offs, document threats to validity, and describe an implemented-but-not-yet-measured failure-injection methodology for quantifying the debuggability benefit that this overhead buys.
+Observability instrumentation — metrics, structured logs, and distributed traces — is widely adopted in microservice systems, but its runtime cost is often assumed rather than measured. This report presents a controlled, experiment-first evaluation of how increasing observability depth affects latency, CPU, memory, and telemetry volume in a containerized microservice application. A single transaction-processing flow spanning HTTP, PostgreSQL, Redis, and RabbitMQ was instrumented behind one environment switch (`OBS_MODE`) that selects between five modes: no observability, metrics only, metrics + logs, metrics + logs + traces, and a full OpenTelemetry Collector pipeline. In the primary evaluation each mode was driven by an open-model load and repeated ten times in randomized order, with non-parametric inference (bootstrap confidence intervals, Kruskal–Wallis, Mann–Whitney U, Cliff's delta). Relative to the uninstrumented baseline, metrics-only instrumentation was **not statistically distinguishable** (CPU and median-latency confidence intervals overlap baseline); **structured logging was the single largest contributor** to overhead (CPU +164%, median latency +177%, both p < 0.001, Cliff's δ = 1.0) and produced severe tail-latency spikes; and the full OpenTelemetry pipeline — despite carrying the most telemetry — held CPU near the tracing level (+51%) with the lowest latency variance, owing to its batched, asynchronous export. Telemetry volume scaled to roughly 5.7 log entries and 6.7 spans per request. We further measure the debuggability benefit objectively: without a metrics pipeline an injected fault (a 12% error rate; a ~1-second p95) is automatically undetectable, whereas any metrics-bearing mode detects it within roughly one scrape interval and pages within the alert debounce — a step change rather than a gradient. We discuss the practical implications of these trade-offs and document threats to validity.
 
 ---
 
@@ -23,7 +23,7 @@ This report addresses two research questions for v1:
 - **RQ1 (Overhead).** How does each level of observability instrumentation affect latency, throughput, CPU usage, memory usage, and telemetry volume?
 - **RQ2 (Debuggability).** How much do metrics, logs, and traces reduce failure detection time and root-cause analysis time?
 
-RQ1 is answered here with measured data. For RQ2, the report documents the implemented mechanisms and the measurement protocol; the human-in-the-loop timings remain to be collected and are not fabricated.
+RQ1 is answered here with measured data. RQ2's **detection** half is answered objectively (§6.5); its **root-cause** half is left as an implemented protocol for a future operator study, and no human timings are fabricated.
 
 ---
 
@@ -155,7 +155,60 @@ All raw artifacts are stored under `results/raw/`, processed comparisons under `
 
 ## 6. Results
 
-### 6.1 Latency by mode
+> **Two measurements are reported.** §6.0 is the **primary** result — a realistic,
+> statistically-powered campaign (open-model load, N = 10 per mode, bootstrap CIs,
+> non-parametric tests). §6.1–6.4 are an earlier **preliminary micro-benchmark**
+> (3 runs, few VUs), retained for context; where they disagree, §6.0 supersedes them.
+
+### 6.0 Primary result: realistic load campaign (N = 10)
+
+Each mode was driven by an open-model constant-arrival-rate load (~90 req/s) and
+repeated **10 times in randomized mode order**, after a discarded warm-up, with images
+rebuilt from current source. Distributions are non-normal, so all inference is
+non-parametric (medians, bootstrap 95% CIs, Kruskal–Wallis, Mann–Whitney U, Cliff's δ).
+Full tables and box plots: [`statistics-load-report.md`](./statistics-load-report.md).
+
+**CPU overhead (robust; low variance):**
+
+| Mode                    | Median CPU % [95% CI] | Overhead |  MWU p | Cliff's δ    | Differs from baseline? |
+| ----------------------- | --------------------- | -------: | -----: | ------------ | ---------------------- |
+| Baseline                | 5.6 [5.3, 7.2]        |        — |      — | —            | —                      |
+| Metrics                 | 8.3 [5.2, 13.6]       |     +48% |   0.34 | 0.26 (small) | no (CI overlaps)       |
+| Metrics + Logs          | 14.9 [13.7, 19.6]     |    +164% | <0.001 | 1.00 (large) | **yes**                |
+| Metrics + Logs + Traces | 8.9 [8.2, 13.2]       |     +59% |  0.003 | 0.80 (large) | **yes**                |
+| Full OpenTelemetry      | 8.5 [7.2, 9.6]        |     +51% |  0.011 | 0.68 (large) | borderline (overlaps)  |
+
+**Median (p50) latency:**
+
+| Mode                    | Median p50 ms [95% CI] | Overhead |  MWU p | Differs?         |
+| ----------------------- | ---------------------- | -------: | -----: | ---------------- |
+| Baseline                | 1.72 [1.64, 1.91]      |        — |      — | —                |
+| Metrics                 | 2.71 [1.64, 5.28]      |     +58% |   0.31 | no (CI overlaps) |
+| Metrics + Logs          | 4.77 [4.10, 16.92]     |    +177% | <0.001 | **yes**          |
+| Metrics + Logs + Traces | 2.89 [2.49, 4.55]      |     +69% | <0.001 | **yes**          |
+| Full OpenTelemetry      | 3.33 [2.68, 4.05]      |     +94% | <0.001 | **yes**          |
+
+Kruskal–Wallis confirms the modes differ overall (CPU H = 24.2, p < 0.001; p50
+H = 23.1, p < 0.001; p95 H = 16.2, p = 0.003). Three findings are robust:
+
+1. **Metrics are essentially free.** Metrics-only overhead is not statistically
+   distinguishable from baseline for either CPU (p = 0.34) or p50 latency (p = 0.31);
+   both CIs overlap baseline.
+2. **Structured logging is the dominant cost.** Metrics + Logs has the highest CPU
+   (+164%) and p50 latency (+177%), both highly significant (p < 0.001, δ = 1.00,
+   non-overlapping CIs). Synchronous log shipping also produced severe **p95 tail
+   spikes** (one run reached ~4.8 s) — the only mode whose p95 CI excludes baseline.
+3. **The batched OTLP pipeline is comparatively smooth.** Full OpenTelemetry carries the
+   most telemetry yet holds CPU near the traces level (+51%) with the lowest latency
+   variance among instrumented modes — its asynchronous, batched export avoids the
+   per-request stalls that synchronous logging induces.
+
+Absolute latency percentages remain sensitive to the load point (a ~5 ms baseline makes
+small absolute additions large in relative terms); the **CPU result and the qualitative
+ordering are the load-robust conclusions**. A latency-versus-throughput sweep across
+load levels is the natural next step.
+
+### 6.1 Latency by mode (preliminary micro-benchmark)
 
 | Mode                    | p50 (ms) | p95 (ms) | p99 (ms) | p95 variance | Req/run |
 | ----------------------- | -------: | -------: | -------: | -----------: | ------: |
@@ -212,15 +265,35 @@ Telemetry volume is substantial: roughly **5.7 log entries and 6.7 spans per req
 
 In `otel_full` mode the Collector is a dedicated process. It consumed approximately **18.0% CPU** and a peak of **79.2 MiB** of memory. Notably, service memory in the collector modes was _lower_ than baseline; this is discussed in §8 as a sampling/timing artifact rather than a real reduction. The architectural value of the Collector is that it moves part of the telemetry cost out of the service processes and centralizes routing.
 
-### 6.5 Debuggability (RQ2): status
+### 6.5 Debuggability (RQ2): objective detection
 
-The detection and root-cause measurement is **implemented but not yet run**. All six fault mechanisms, the five failure-specific k6 scripts, the manual protocol, the observations schema, and the report generator exist and are verified. The generator currently runs against an explicitly labelled _illustrative example_ and stamps every output as "NOT measured". Detection-time and root-cause-time charts are therefore presented as methodology illustrations only and must not be read as findings:
+RQ2 has two halves: **detection** (how fast a fault is noticed) and **root-cause**
+(how fast it is diagnosed). The detection half is measured here **objectively**, with
+no human in the loop: each fault is injected into a freshly built stack, a
+constant-arrival-rate load is applied at a recorded `T0`, and the relevant Prometheus
+alert is polled until it becomes active and then fires (`pnpm mttd:run`). MTTD is the
+elapsed time from `T0`.
 
-![Detection time (illustrative)](../results/charts/detection-time.svg)
+| Fault              | Mode     | Detected | Time→pending (s) | Time→firing (s) | Baseline symptom |
+| ------------------ | -------- | -------- | ---------------: | --------------: | ---------------- |
+| Payment 500 errors | Baseline | **no**   |                — |               — | 12% error rate   |
+| Payment 500 errors | Metrics  | yes      |              9.4 |            70.3 | —                |
+| Slow payment       | Baseline | **no**   |                — |               — | p95 ≈ 1007 ms    |
+| Slow payment       | Metrics  | yes      |              9.7 |            72.2 | —                |
 
-![Root-cause time (illustrative)](../results/charts/root-cause-time.svg)
+![Objective MTTD](../results/charts/mttd-detection.svg)
 
-To complete RQ2, an operator records real timings into `experiments/failure-injection/observations.json` (`status: "measured"`) and re-runs `pnpm failure:report`.
+The result is a **step change, not a gradient**: without a metrics pipeline the fault
+is real and severe (a 12% error rate; a ~1-second p95) yet **automatically
+undetectable**. Any metrics-bearing mode detects the anomaly within roughly one scrape
+interval (~9 s to pending) and pages within the alert's `for:` debounce (~70 s to
+firing). Because metrics, logs, and traces share the same metric-based alerts, they
+detect equally fast; detection latency is therefore governed by alert configuration,
+not observability depth. The additional value of logs and traces lies in the
+**root-cause** half, which is the harder, human-in-the-loop measurement: that protocol
+and tooling are implemented (`docs/failure-injection-protocol.md`, `pnpm failure:report`)
+and remain to be run as a controlled operator study. Full results:
+`docs/mttd-report.md`.
 
 ---
 
@@ -249,7 +322,7 @@ To complete RQ2, an operator records real timings into `experiments/failure-inje
 
 ## 9. Limitations
 
-- RQ2 (debuggability) is **not yet measured**; only the mechanism and protocol are delivered. No detection or root-cause findings are claimed.
+- RQ2's **detection** half is measured objectively (§6.5); its **root-cause** half is **not yet measured** — only the mechanism and protocol are delivered, and no root-cause findings are claimed.
 - The workload does not stress the system to saturation in the comparison runs; this isolates instrumentation overhead but does not characterize behavior under heavy contention.
 - No statistical significance testing is performed beyond mean and run-to-run variance; with three runs, confidence intervals would be wide.
 
@@ -257,7 +330,7 @@ To complete RQ2, an operator records real timings into `experiments/failure-inje
 
 ## 10. Future Work
 
-- **Complete RQ2:** run the failure-injection protocol across baseline and `otel_full` (and selected intermediate modes), record real detection and root-cause times, and quantify the debuggability improvement.
+- **Complete RQ2's root-cause half:** run the failure-injection protocol as a controlled operator study (multiple participants, randomized) to quantify how much logs and traces reduce time-to-root-cause — the detection half is already measured objectively (§6.5).
 - **Heavier and longer workloads:** repeat the overhead comparison at higher VU counts and with the soak profile to separate instrumentation overhead from queueing effects and to surface leaks.
 - **Sampling study:** measure how trace/log sampling ratios trade telemetry volume against debuggability.
 - **Database indexing experiments (Phase 10):** PostgreSQL index strategies under load, read improvement vs write penalty.
@@ -298,7 +371,10 @@ Every experiment uses the same dataset, load script, Docker resources, and durat
 
 ## References
 
-These primary sources informed the implementation and terminology; a formal related-work survey is future work.
+A thematic literature review that positions this study against prior work on
+observability overhead, tracing systems, benchmarking methodology, indexing, and
+orchestration is in [`docs/related-work.md`](./related-work.md). The primary
+implementation/tooling sources are:
 
 - OpenTelemetry Documentation — https://opentelemetry.io/docs/
 - OpenTelemetry Collector — https://opentelemetry.io/docs/collector/

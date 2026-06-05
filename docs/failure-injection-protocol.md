@@ -66,6 +66,14 @@ off, so a normally started stack is unaffected.
    (a rough count of distinct actions), and `rootCauseAccuracy`
    (`correct` | `partial` | `incorrect`).
 
+## Objective detection (no human required)
+
+The **detection** half of debuggability is also measured fully objectively by
+`pnpm mttd:run` (see `docs/mttd-report.md`): it injects each fault under load and
+times the resulting Prometheus alert (pending → firing). This needs no operator and
+is the recommended way to quantify time-to-detect. The manual protocol below is for
+the **root-cause** half, which still requires a human.
+
 ## Derived measurements
 
 The report generator computes, per scenario and mode:

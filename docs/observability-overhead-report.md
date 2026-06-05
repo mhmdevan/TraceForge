@@ -1,6 +1,6 @@
 # Observability Overhead Report
 
-Generated at: 2026-06-05T09:51:05.731Z
+Generated at: 2026-06-05T13:50:58.901Z
 
 ## Overview
 

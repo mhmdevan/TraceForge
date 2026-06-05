@@ -1,6 +1,6 @@
 # Failure Injection and Debuggability Report
 
-Generated at: 2026-06-05T09:51:05.125Z
+Generated at: 2026-06-05T13:50:58.290Z
 
 > **Illustrative example — NOT measured.** This report was generated from `experiments/failure-injection/observations.example.json` (status: `illustrative-example`). The numbers are placeholders that demonstrate the tooling. Record real runs following docs/failure-injection-protocol.md and set `status` to `measured` to replace them.
 

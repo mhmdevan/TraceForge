@@ -1,0 +1,25 @@
+{
+  "title": "TraceForge: Observable Microservice Lab",
+  "description": "A controlled, experiment-first testbed that measures the performance and resource cost of observability instrumentation in a containerized microservice system. It compares five additive observability modes (none, metrics, +logs, +traces, full OpenTelemetry pipeline) against a true uninstrumented baseline with statistical rigor (open-model load, bootstrap confidence intervals, non-parametric tests, effect sizes), measures objective failure detection (mean-time-to-detect via Prometheus alert firing), and includes 1M-row PostgreSQL/MongoDB indexing experiments and a Docker Compose-vs-Swarm-vs-Kubernetes comparison. Code is MIT-licensed; experimental data and figures are CC-BY-4.0.",
+  "upload_type": "software",
+  "access_right": "open",
+  "license": "MIT",
+  "creators": [
+    {
+      "name": "Eslamnia, Mohammad",
+      "affiliation": "Department of Mathematical Support and Administration of Information Systems, Institute of Intelligent Systems and Technologies, Peter the Great St. Petersburg Polytechnic University",
+      "orcid": "0009-0001-0014-8000"
+    }
+  ],
+  "keywords": [
+    "observability",
+    "microservices",
+    "OpenTelemetry",
+    "performance evaluation",
+    "benchmarking",
+    "distributed tracing",
+    "database indexing",
+    "container orchestration",
+    "reproducible research"
+  ]
+}
